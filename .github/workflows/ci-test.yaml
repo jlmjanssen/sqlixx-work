@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: 2026 AlgorIT Software Consultancy <https://github.com/algoritnl>
+# SPDX-License-Identifier: CC0-1.0
+
+name: CI Test
+
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-26.04]
+        library-type: [static, shared]
+        config: [Debug, Release]
+
+        include:
+          - os: ubuntu-26.04
+            cc: gcc
+            cxx: g++
+
+          - library-type: static
+            build-shared-libs: OFF
+          - library-type: shared
+            build-shared-libs: ON
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure project with ${{ matrix.library-type }} libraries
+        run: cmake --preset=default -DBUILD_SHARED_LIBS:BOOL=${{ matrix.build-shared-libs }}
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+
+      - name: Build project in ${{ matrix.config }} mode
+        run: cmake --build --preset default --config ${{ matrix.config }}
+
+      - name: Run tests
+        run: ctest --preset default -C ${{ matrix.config }}
+
+
+  clang-tidy:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure project for clang-tidy
+        run: cmake --preset=default -DENABLE_CLANG_TIDY:BOOL=ON
+        env:
+          CC: clang
+          CXX: clang++
+
+      - name: Perform static analysis
+        run: cmake --build --preset default --config Debug
+
+
+  coverage:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install LLVM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm
+
+      - name: Configure project for coverage
+        run: cmake --preset=default -DENABLE_COVERAGE:BOOL=ON
+        env:
+          CC: clang
+          CXX: clang++
+
+      - name: Build project with coverage instrumentation
+        run: cmake --build --preset default --config Debug
+
+      - name: Run tests
+        run: ctest --preset default -C Debug
+
+      - name: Collect coverage data
+        run: cmake --build --preset default --config Debug --target coverage_data
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./build/coverage.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true

@@ -1,0 +1,14 @@
+version = 1
+
+[[annotations]]
+path = [
+    "**.json",
+    ".clang-format",
+    ".clang-tidy",
+    ".gersemirc",
+    ".gitattributes",
+    ".gitignore"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 AlgorIT Software Consultancy <https://github.com/algoritnl>"
+SPDX-License-Identifier = "CC0-1.0"
