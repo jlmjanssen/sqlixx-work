@@ -149,7 +149,7 @@ export template <typename Tuple>
 [[nodiscard]] auto bind_tuple_from(const statement_handle& stmt, int& index, Tuple&& tuple) noexcept
     -> std::expected<void, std::error_code> {
     return std::apply(
-        [&stmt, &index](auto&&... args) {
+        [stmt, &index](auto&&... args) {
             return bind_parameters_from(stmt, index, std::forward<decltype(args)>(args)...);
         },
         std::forward<Tuple>(tuple));

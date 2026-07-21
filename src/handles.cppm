@@ -48,7 +48,7 @@ public:
 
     constexpr ~owning_handle() noexcept {
         if (Handle handle = release(); handle != Handle{}) {
-            Deleter(handle);
+            std::invoke(Deleter, handle);
         }
     }
 

@@ -12,7 +12,9 @@ import std;
 namespace sqlixx {
 
 export enum class sqlite_errc : int {
+    // Unused: SQLITE_OK
     error = SQLITE_ERROR,
+    // Unused: SQLITE_INTERNAL
     perm = SQLITE_PERM,
     abort = SQLITE_ABORT,
     busy = SQLITE_BUSY,
@@ -26,6 +28,7 @@ export enum class sqlite_errc : int {
     full = SQLITE_FULL,
     cantopen = SQLITE_CANTOPEN,
     protocol = SQLITE_PROTOCOL,
+    // Unused: SQLITE_EMPTY
     schema = SQLITE_SCHEMA,
     toobig = SQLITE_TOOBIG,
     constraint = SQLITE_CONSTRAINT,
@@ -33,8 +36,13 @@ export enum class sqlite_errc : int {
     misuse = SQLITE_MISUSE,
     nolfs = SQLITE_NOLFS,
     auth = SQLITE_AUTH,
+    // Unused: SQLITE_FORMAT
     range = SQLITE_RANGE,
     notadb = SQLITE_NOTADB
+    // Unused: SQLITE_NOTICE
+    // Unused: SQLITE_WARNING
+    // Unused: SQLITE_ROW
+    // Unused: SQLITE_DONE
 };
 
 class sqlite_error_category final : public std::error_category {

@@ -11,3 +11,4 @@ export import :connection.open;
 export import :statement;
 export import :statement.prepare;
 export import :binders;
+export import :readers;

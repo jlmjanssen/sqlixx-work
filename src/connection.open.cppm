@@ -65,8 +65,8 @@ constexpr auto default_error_handler = [](std::error_code, std::string_view) noe
 template <typename Handler>
 concept error_handler =
     requires(std::remove_cvref_t<Handler> handler, std::error_code errcode, std::string_view errmsg) {
-        { handler(errcode, errmsg) } -> std::same_as<void>;
-        requires noexcept(handler(errcode, errmsg));
+        { std::invoke(handler, errcode, errmsg) } -> std::same_as<void>;
+        requires noexcept(std::invoke(handler, errcode, errmsg));
     };
 
 template <error_handler ErrorHandler = decltype(default_error_handler)>
@@ -82,7 +82,7 @@ template <error_handler ErrorHandler = decltype(default_error_handler)>
         const auto errcode = make_sqlite_error_code(result);
         if constexpr (!std::is_same_v<std::remove_cvref_t<ErrorHandler>, decltype(default_error_handler)>) {
             const std::string_view errmsg = (handle ? ::sqlite3_errmsg(handle) : "No active connection");
-            std::forward<ErrorHandler>(on_error)(errcode, errmsg);
+            std::invoke(std::forward<ErrorHandler>(on_error), errcode, errmsg);
         }
         if (handle != nullptr) {
             ::sqlite3_close_v2(handle);
