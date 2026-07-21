@@ -8,3 +8,4 @@ export import :sqlite_error;
 export import :handles;
 export import :connection;
 export import :statement;
+export import :binders;

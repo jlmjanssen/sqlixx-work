@@ -2,22 +2,19 @@
 // SPDX-License-Identifier: MIT
 
 module;
+
 #include <sqlite3.h>
 
 export module sqlixx:connection;
+
 import std;
 import :sqlite_error;
 import :handles;
 
 namespace sqlixx {
 
-export using connection_handle = shallow_handle<::sqlite3*>;
-export using connection = owning_handle<::sqlite3*>;
-
-template <>
-struct handle_deleter<::sqlite3*> {
-    auto operator()(::sqlite3* handle) const noexcept -> void { ::sqlite3_close_v2(handle); }
-};
+export using connection = owning_handle<::sqlite3*, ::sqlite3_close_v2>;
+export using connection_handle = connection::shallow_handle_type;
 
 namespace open {
 struct flag_t {};
@@ -66,14 +63,16 @@ constexpr auto make_flags(Flags... flags) noexcept -> int {
 }
 } // namespace open
 
-constexpr auto default_error_handler = [](::sqlite3*, int) noexcept -> void {};
+constexpr auto default_error_handler = [](std::error_code, std::string_view) noexcept -> void {};
 
 template <typename Handler>
-concept error_handler = requires(Handler handler, ::sqlite3* handle, int result) {
-    { handler(handle, result) } -> std::same_as<void>;
-};
+concept error_handler =
+    requires(std::remove_cvref_t<Handler> handler, std::error_code errcode, std::string_view errmsg) {
+        { handler(errcode, errmsg) } -> std::same_as<void>;
+        requires noexcept(handler(errcode, errmsg));
+    };
 
-template <typename ErrorHandler = decltype(default_error_handler)>
+template <error_handler ErrorHandler = decltype(default_error_handler)>
 [[nodiscard]] constexpr auto open_connection_impl(const char* filename,
                                                   int flags,
                                                   const char* vfs,
@@ -83,11 +82,15 @@ template <typename ErrorHandler = decltype(default_error_handler)>
     int result = ::sqlite3_open_v2(filename, &handle, flags, vfs);
 
     if (result != SQLITE_OK) {
-        std::forward<ErrorHandler>(on_error)(handle, result);
+        const auto errcode = make_sqlite_error_code(result);
+        if constexpr (!std::is_same_v<std::remove_cvref_t<ErrorHandler>, decltype(default_error_handler)>) {
+            const std::string_view errmsg = (handle ? ::sqlite3_errmsg(handle) : "No active connection");
+            std::forward<ErrorHandler>(on_error)(errcode, errmsg);
+        }
         if (handle != nullptr) {
             ::sqlite3_close_v2(handle);
         }
-        return std::unexpected(make_sqlite_error_code(result));
+        return std::unexpected(errcode);
     }
 
     return connection(handle);
@@ -105,15 +108,13 @@ export template <open::is_flag... Flags>
     return open_connection_impl(filename, open::make_flags(flags...), vfs);
 }
 
-export template <typename ErrorHandler, open::is_flag... Flags>
-    requires error_handler<ErrorHandler>
+export template <error_handler ErrorHandler, open::is_flag... Flags>
 [[nodiscard]] constexpr auto open_connection(const char* filename, ErrorHandler&& on_error, Flags... flags) noexcept
     -> std::expected<connection, std::error_code> {
     return open_connection_impl(filename, open::make_flags(flags...), nullptr, std::forward<ErrorHandler>(on_error));
 }
 
-export template <typename ErrorHandler, open::is_flag... Flags>
-    requires error_handler<ErrorHandler>
+export template <error_handler ErrorHandler, open::is_flag... Flags>
 [[nodiscard]] constexpr auto
 open_connection(const char* filename, const char* vfs, ErrorHandler&& on_error, Flags... flags) noexcept
     -> std::expected<connection, std::error_code> {

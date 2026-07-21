@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 export module sqlixx:error;
+
 import std;
 
 namespace sqlixx {

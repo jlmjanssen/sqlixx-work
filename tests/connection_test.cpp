@@ -12,6 +12,7 @@ using ::testing::Return;
 using ::testing::SetArgPointee;
 
 inline const auto DUMMY_DB = reinterpret_cast<::sqlite3*>(0xDEADC0DE);
+inline const auto* DUMMY_ERR_MSG = "SQLite mock error message";
 
 class SQLiteConnectionTest : public ::testing::Test {
 protected:
@@ -24,11 +25,11 @@ protected:
 
 TEST_F(SQLiteConnectionTest, HandleDefaultConstructorAndObservers) {
     sqlixx::connection_handle empty_handle;
-    EXPECT_EQ(empty_handle.c_handle(), nullptr);
+    EXPECT_EQ(empty_handle.get(), nullptr);
     EXPECT_FALSE(empty_handle);
 
     sqlixx::connection_handle active_handle(DUMMY_DB);
-    EXPECT_EQ(active_handle.c_handle(), DUMMY_DB);
+    EXPECT_EQ(active_handle.get(), DUMMY_DB);
     EXPECT_TRUE(active_handle);
 }
 
@@ -37,7 +38,7 @@ TEST_F(SQLiteConnectionTest, HandleReleaseClearsInternalPointer) {
     auto* released = handle.release();
 
     EXPECT_EQ(released, DUMMY_DB);
-    EXPECT_EQ(handle.c_handle(), nullptr);
+    EXPECT_EQ(handle.get(), nullptr);
 }
 
 TEST_F(SQLiteConnectionTest, ConnectionDestructorCallsCloseIfValid) {
@@ -54,9 +55,9 @@ TEST_F(SQLiteConnectionTest, ConnectionMoveConstructorTransfersOwnership) {
     sqlixx::connection destination(std::move(source));
 
     EXPECT_TRUE(destination);
-    EXPECT_EQ(destination.c_handle(), DUMMY_DB);
+    EXPECT_EQ(destination.get(), DUMMY_DB);
     EXPECT_FALSE(source);
-    EXPECT_EQ(source.c_handle(), nullptr);
+    EXPECT_EQ(source.get(), nullptr);
 
     EXPECT_CALL(mock_, sqlite3_close_v2(DUMMY_DB)).WillOnce(Return(SQLITE_OK));
 }
@@ -72,8 +73,8 @@ TEST_F(SQLiteConnectionTest, ConnectionMoveAssignmentDeallocatesOldAndTakesNew) 
 
     conn_assigned = std::move(conn_source);
 
-    EXPECT_EQ(conn_assigned.c_handle(), DUMMY_DB_NEW);
-    EXPECT_EQ(conn_source.c_handle(), nullptr);
+    EXPECT_EQ(conn_assigned.get(), DUMMY_DB_NEW);
+    EXPECT_EQ(conn_source.get(), nullptr);
 
     EXPECT_CALL(mock_, sqlite3_close_v2(DUMMY_DB_NEW)).WillOnce(Return(SQLITE_OK));
 }
@@ -85,7 +86,7 @@ TEST_F(SQLiteConnectionTest, ConnectionMoveAssignmentSelfAssignmentDoesNothing) 
 
     conn = std::move(conn);
 
-    EXPECT_EQ(conn.c_handle(), DUMMY_DB);
+    EXPECT_EQ(conn.get(), DUMMY_DB);
 
     EXPECT_CALL(mock_, sqlite3_close_v2(DUMMY_DB)).WillOnce(Return(SQLITE_OK));
 }
@@ -94,7 +95,7 @@ TEST_F(SQLiteConnectionTest, ConnectionImplicitlyConvertsToHandle) {
     sqlixx::connection conn(DUMMY_DB);
 
     sqlixx::connection_handle handle = conn;
-    EXPECT_EQ(handle.c_handle(), DUMMY_DB);
+    EXPECT_EQ(handle.get(), DUMMY_DB);
 
     EXPECT_CALL(mock_, sqlite3_close_v2(DUMMY_DB)).WillOnce(Return(SQLITE_OK));
 }
@@ -109,7 +110,7 @@ TEST_F(SQLiteConnectionTest, OpenConnectionSuccessWithDefaultFlags) {
     auto result = sqlixx::open_connection(db_name);
 
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result->c_handle(), DUMMY_DB);
+    EXPECT_EQ(result->get(), DUMMY_DB);
 
     EXPECT_CALL(mock_, sqlite3_close_v2(DUMMY_DB)).WillOnce(Return(SQLITE_OK));
 }
@@ -136,11 +137,12 @@ TEST_F(SQLiteConnectionTest, OpenConnectionFailureTriggersErrorHandlerAndCleansU
     EXPECT_CALL(mock_, sqlite3_open_v2(testing::StrEq(db_name), _, _, nullptr))
         .WillOnce(DoAll(SetArgPointee<1>(DUMMY_DB), Return(SQLITE_CANTOPEN)));
 
+    EXPECT_CALL(mock_, sqlite3_errmsg(DUMMY_DB)).WillOnce(Return(DUMMY_ERR_MSG));
     EXPECT_CALL(mock_, sqlite3_close_v2(DUMMY_DB)).WillOnce(Return(SQLITE_OK));
 
-    auto handler = [&](::sqlite3* db, int rc) noexcept -> void {
-        EXPECT_EQ(db, DUMMY_DB);
-        EXPECT_EQ(rc, SQLITE_CANTOPEN);
+    auto handler = [&](std::error_code ec, std::string_view msg) noexcept -> void {
+        EXPECT_EQ(ec, sqlixx::make_sqlite_error_code(SQLITE_CANTOPEN));
+        EXPECT_EQ(msg, DUMMY_ERR_MSG);
         error_handler_called = true;
     };
 
@@ -174,14 +176,14 @@ TEST_F(SQLiteConnectionTest, OpenConnectionWithCustomErrorHandlerVfsAndFlagsSucc
     EXPECT_CALL(mock_, sqlite3_open_v2(testing::StrEq(db_name), _, expected_flags, testing::StrEq(vfs_name)))
         .WillOnce(DoAll(SetArgPointee<1>(DUMMY_DB), Return(SQLITE_OK)));
 
-    auto handler = [&](::sqlite3* db, int rc) noexcept -> void {
+    auto handler = [&](std::error_code, std::string_view) noexcept -> void {
         FAIL() << "Error handler should not be called on success.";
     };
 
     auto result = sqlixx::open_connection(db_name, vfs_name, handler, sqlixx::open::readwrite_create);
 
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result->c_handle(), DUMMY_DB);
+    EXPECT_EQ(result->get(), DUMMY_DB);
 
     EXPECT_CALL(mock_, sqlite3_close_v2(DUMMY_DB)).WillOnce(Return(SQLITE_OK));
 }
@@ -195,11 +197,12 @@ TEST_F(SQLiteConnectionTest, OpenConnectionWithCustomErrorHandlerVfsAndFlagsFail
     EXPECT_CALL(mock_, sqlite3_open_v2(testing::StrEq(db_name), _, expected_flags, testing::StrEq(vfs_name)))
         .WillOnce(DoAll(SetArgPointee<1>(DUMMY_DB), Return(SQLITE_PERM)));
 
+    EXPECT_CALL(mock_, sqlite3_errmsg(DUMMY_DB)).WillOnce(Return(DUMMY_ERR_MSG));
     EXPECT_CALL(mock_, sqlite3_close_v2(DUMMY_DB)).WillOnce(Return(SQLITE_OK));
 
-    auto handler = [&](::sqlite3* db, int rc) noexcept -> void {
-        EXPECT_EQ(db, DUMMY_DB);
-        EXPECT_EQ(rc, SQLITE_PERM);
+    auto handler = [&](std::error_code ec, std::string_view msg) noexcept -> void {
+        EXPECT_EQ(ec, sqlixx::make_sqlite_error_code(SQLITE_PERM));
+        EXPECT_EQ(msg, DUMMY_ERR_MSG);
         error_handler_called = true;
     };
 

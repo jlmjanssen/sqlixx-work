@@ -2,24 +2,20 @@
 // SPDX-License-Identifier: MIT
 
 module;
+
 #include <sqlite3.h>
 
 export module sqlixx:statement;
+
 import std;
-import :error;
 import :sqlite_error;
 import :handles;
 import :connection;
 
 namespace sqlixx {
 
-export using statement_handle = shallow_handle<::sqlite3_stmt*>;
-export using statement = owning_handle<::sqlite3_stmt*>;
-
-template <>
-struct handle_deleter<::sqlite3_stmt*> {
-    auto operator()(::sqlite3_stmt* handle) const noexcept -> void { ::sqlite3_finalize(handle); }
-};
+export using statement = owning_handle<::sqlite3_stmt*, ::sqlite3_finalize>;
+export using statement_handle = statement::shallow_handle_type;
 
 export struct prepare_result {
     statement stmt;
@@ -72,10 +68,6 @@ constexpr auto make_flags(Flags... flags) noexcept -> unsigned int {
 [[nodiscard]] constexpr auto
 prepare_statement_impl(::sqlite3* db_handle, const char* sql_ptr, int byte_count, unsigned int prep_flags) noexcept
     -> std::expected<prepare_result, std::error_code> {
-    if (db_handle == nullptr) {
-        return std::unexpected(errc::invalid_handle);
-    }
-
     ::sqlite3_stmt* stmt_handle = nullptr;
     const char* tail_ptr = nullptr;
 
@@ -102,14 +94,13 @@ prepare_statement_impl(::sqlite3* db_handle, const char* sql_ptr, int byte_count
 export template <prep::is_flag... Flags>
 [[nodiscard]] constexpr auto prepare_statement(connection_handle conn, const char* sql, Flags... flags) noexcept
     -> std::expected<prepare_result, std::error_code> {
-    return prepare_statement_impl(conn.c_handle(), sql, -1, prep::make_flags(flags...));
+    return prepare_statement_impl(conn.get(), sql, -1, prep::make_flags(flags...));
 }
 
 export template <prep::is_flag... Flags>
 [[nodiscard]] constexpr auto prepare_statement(connection_handle conn, std::string_view sql, Flags... flags) noexcept
     -> std::expected<prepare_result, std::error_code> {
-    return prepare_statement_impl(
-        conn.c_handle(), sql.data(), static_cast<int>(sql.size()), prep::make_flags(flags...));
+    return prepare_statement_impl(conn.get(), sql.data(), static_cast<int>(sql.size()), prep::make_flags(flags...));
 }
 
 } // namespace sqlixx

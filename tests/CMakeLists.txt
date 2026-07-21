@@ -8,17 +8,26 @@ add_executable(sqlixx_test)
 set_target_properties(sqlixx_test PROPERTIES CXX_MODULE_STD ON)
 target_sources(
     sqlixx_test
-    PRIVATE sqlite_mock.cpp error_test.cpp sqlite_error_test.cpp connection_test.cpp statement_test.cpp
+    PRIVATE sqlite_mock.cpp error_test.cpp sqlite_error_test.cpp connection_test.cpp statement_test.cpp binders_test.cpp
 )
 target_link_libraries(sqlixx_test PRIVATE SQLixx::SQLixx GTest::gmock_main $<$<CXX_COMPILER_ID:GNU>:-lstdc++exp>)
 target_link_options(
     sqlixx_test
     PRIVATE
         "LINKER:--wrap=sqlite3_errstr"
+        "LINKER:--wrap=sqlite3_errmsg"
         "LINKER:--wrap=sqlite3_open_v2"
         "LINKER:--wrap=sqlite3_close_v2"
         "LINKER:--wrap=sqlite3_prepare_v3"
         "LINKER:--wrap=sqlite3_finalize"
+        "LINKER:--wrap=sqlite3_bind_int64"
+        "LINKER:--wrap=sqlite3_bind_double"
+        "LINKER:--wrap=sqlite3_bind_text"
+        "LINKER:--wrap=sqlite3_bind_blob64"
+        "LINKER:--wrap=sqlite3_bind_zeroblob64"
+        "LINKER:--wrap=sqlite3_bind_null"
+        "LINKER:--wrap=sqlite3_bind_value"
+        "LINKER:--wrap=sqlite3_bind_parameter_index"
 )
 target_enable_coverage(sqlixx_test)
 gtest_add_tests(TARGET sqlixx_test)

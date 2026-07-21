@@ -6,6 +6,7 @@ module;
 #include <sqlite3.h>
 
 export module sqlixx:sqlite_error;
+
 import std;
 
 namespace sqlixx {

@@ -34,6 +34,7 @@ target_sources(
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/handles.cppm"
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/connection.cppm"
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/statement.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/binders.cppm"
 )
 
 target_link_libraries(sqlixx PUBLIC SQLite3::SQLite3)

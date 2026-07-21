@@ -2,44 +2,40 @@
 // SPDX-License-Identifier: MIT
 
 export module sqlixx:handles;
+
 import std;
 
 namespace sqlixx {
 
-template <typename Handle>
-    requires std::is_pointer_v<Handle>
-class shallow_handle {
+template <typename Handle, template <typename> class... Mixins>
+    requires std::is_trivially_default_constructible_v<Handle> &&
+             (std::is_trivially_default_constructible_v<Mixins<std::monostate>> && ...)
+class shallow_handle : public Mixins<shallow_handle<Handle, Mixins...>>... {
 public:
     constexpr shallow_handle() noexcept = default;
     explicit constexpr shallow_handle(Handle handle) noexcept : handle_(handle) {}
 
-    constexpr shallow_handle(const shallow_handle&) noexcept = default;
-    constexpr auto operator=(const shallow_handle&) noexcept -> shallow_handle& = default;
-    constexpr shallow_handle(shallow_handle&&) noexcept = default;
-    constexpr auto operator=(shallow_handle&&) noexcept -> shallow_handle& = default;
-
-    ~shallow_handle() = default;
     constexpr auto release() noexcept -> Handle { return std::exchange(handle_, Handle{}); }
 
-    [[nodiscard]] constexpr auto c_handle() const noexcept -> Handle { return handle_; }
     [[nodiscard]] constexpr explicit operator bool() const noexcept { return handle_ != Handle{}; }
+    [[nodiscard]] constexpr auto get() const noexcept -> Handle { return handle_; }
 
 private:
     Handle handle_{};
 };
 
-template <typename Handle>
-struct handle_deleter;
-
-template <typename Handle>
-    requires std::is_pointer_v<Handle>
-class owning_handle {
+template <typename Handle, auto Deleter, template <typename> class... Mixins>
+    requires std::is_trivially_default_constructible_v<Handle> &&
+             (std::is_trivially_default_constructible_v<Mixins<std::monostate>> && ...)
+class owning_handle : public Mixins<owning_handle<Handle, Deleter, Mixins...>>... {
 public:
+    using shallow_handle_type = shallow_handle<Handle, Mixins...>;
+
     constexpr owning_handle() noexcept = default;
     explicit constexpr owning_handle(Handle handle) noexcept : handle_(handle) {}
 
-    constexpr owning_handle(const owning_handle&) = delete;
-    constexpr auto operator=(const owning_handle&) -> owning_handle& = delete;
+    owning_handle(const owning_handle&) = delete;
+    auto operator=(const owning_handle&) -> owning_handle& = delete;
 
     constexpr owning_handle(owning_handle&& other) noexcept : handle_(other.release()) {}
     constexpr auto operator=(owning_handle&& other) noexcept -> owning_handle& {
@@ -50,16 +46,17 @@ public:
         return *this;
     }
 
-    ~owning_handle() {
+    constexpr ~owning_handle() noexcept {
         if (Handle handle = release(); handle != Handle{}) {
-            handle_deleter<Handle>{}(handle);
+            Deleter(handle);
         }
     }
+
     constexpr auto release() noexcept -> Handle { return std::exchange(handle_, Handle{}); }
 
-    [[nodiscard]] constexpr auto c_handle() const noexcept -> Handle { return handle_; }
     [[nodiscard]] constexpr explicit operator bool() const noexcept { return handle_ != Handle{}; }
-    [[nodiscard]] constexpr operator shallow_handle<Handle>() const noexcept { return shallow_handle<Handle>{handle_}; }
+    [[nodiscard]] constexpr auto get() const noexcept -> Handle { return handle_; }
+    [[nodiscard]] constexpr operator shallow_handle_type() const noexcept { return shallow_handle_type{handle_}; }
 
 private:
     Handle handle_{};

@@ -25,11 +25,11 @@ protected:
 
 TEST_F(SQLiteStatementTest, HandleDefaultConstructorAndObservers) {
     sqlixx::statement_handle empty_handle;
-    EXPECT_EQ(empty_handle.c_handle(), nullptr);
+    EXPECT_EQ(empty_handle.get(), nullptr);
     EXPECT_FALSE(empty_handle);
 
     sqlixx::statement_handle active_handle(DUMMY_STMT);
-    EXPECT_EQ(active_handle.c_handle(), DUMMY_STMT);
+    EXPECT_EQ(active_handle.get(), DUMMY_STMT);
     EXPECT_TRUE(active_handle);
 }
 
@@ -38,7 +38,7 @@ TEST_F(SQLiteStatementTest, HandleReleaseClearsInternalPointer) {
     auto* const released = handle.release();
 
     EXPECT_EQ(released, DUMMY_STMT);
-    EXPECT_EQ(handle.c_handle(), nullptr);
+    EXPECT_EQ(handle.get(), nullptr);
 }
 
 TEST_F(SQLiteStatementTest, StatementDestructorCallsFinalizeIfValid) {
@@ -56,8 +56,8 @@ TEST_F(SQLiteStatementTest, StatementMoveConstructorTransfersOwnership) {
 
     sqlixx::statement destination(std::move(source));
 
-    EXPECT_EQ(destination.c_handle(), DUMMY_STMT);
-    EXPECT_EQ(source.c_handle(), nullptr);
+    EXPECT_EQ(destination.get(), DUMMY_STMT);
+    EXPECT_EQ(source.get(), nullptr);
 
     EXPECT_CALL(mock_, sqlite3_finalize(DUMMY_STMT)).WillOnce(Return(SQLITE_OK));
 }
@@ -73,8 +73,8 @@ TEST_F(SQLiteStatementTest, StatementMoveAssignmentDeallocatesOldAndTakesNew) {
 
     stmt_assigned = std::move(stmt_source);
 
-    EXPECT_EQ(stmt_assigned.c_handle(), DUMMY_STMT_NEW);
-    EXPECT_EQ(stmt_source.c_handle(), nullptr);
+    EXPECT_EQ(stmt_assigned.get(), DUMMY_STMT_NEW);
+    EXPECT_EQ(stmt_source.get(), nullptr);
 
     EXPECT_CALL(mock_, sqlite3_finalize(DUMMY_STMT_NEW)).WillOnce(Return(SQLITE_OK));
 }
@@ -86,7 +86,7 @@ TEST_F(SQLiteStatementTest, StatementMoveAssignmentSelfAssignmentDoesNothing) {
 
     stmt = std::move(stmt);
 
-    EXPECT_EQ(stmt.c_handle(), DUMMY_STMT);
+    EXPECT_EQ(stmt.get(), DUMMY_STMT);
 
     EXPECT_CALL(mock_, sqlite3_finalize(DUMMY_STMT)).WillOnce(Return(SQLITE_OK));
 }
@@ -95,7 +95,7 @@ TEST_F(SQLiteStatementTest, StatementImplicitlyConvertsToHandle) {
     sqlixx::statement stmt(DUMMY_STMT);
 
     sqlixx::statement_handle handle = stmt;
-    EXPECT_EQ(handle.c_handle(), DUMMY_STMT);
+    EXPECT_EQ(handle.get(), DUMMY_STMT);
 
     EXPECT_CALL(mock_, sqlite3_finalize(DUMMY_STMT)).WillOnce(Return(SQLITE_OK));
 }
@@ -110,7 +110,7 @@ TEST_F(SQLiteStatementTest, PrepareStatementCStringSuccessWithDefaultFlags) {
     auto result = sqlixx::prepare_statement(db, sql);
 
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result->stmt.c_handle(), DUMMY_STMT);
+    EXPECT_EQ(result->stmt.get(), DUMMY_STMT);
     EXPECT_TRUE(result->tail.empty());
 
     EXPECT_CALL(mock_, sqlite3_finalize(DUMMY_STMT)).WillOnce(Return(SQLITE_OK));
@@ -147,7 +147,7 @@ TEST_F(SQLiteStatementTest, PrepareStatementStringViewSuccessWithTailAndCustomFl
     auto result = sqlixx::prepare_statement(db, sql, sqlixx::prep::persistent, sqlixx::prep::normalize);
 
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result->stmt.c_handle(), DUMMY_STMT);
+    EXPECT_EQ(result->stmt.get(), DUMMY_STMT);
 
     EXPECT_EQ(result->tail, " SELECT 2;"sv);
 
@@ -168,7 +168,7 @@ TEST_F(SQLiteStatementTest, PrepareStatementStringViewWithNoRemainingTail) {
     auto result = sqlixx::prepare_statement(db, sql);
 
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result->stmt.c_handle(), DUMMY_STMT);
+    EXPECT_EQ(result->stmt.get(), DUMMY_STMT);
 
     EXPECT_TRUE(result->tail.empty());
 
@@ -188,13 +188,4 @@ TEST_F(SQLiteStatementTest, PrepareStatementFailureReturnsErrorNoCleanUpNeeded) 
 
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), sqlixx::sqlite_errc::error);
-}
-
-TEST_F(SQLiteStatementTest, PrepareStatementWithNullDatabaseConnectionReturnsInvalidHandle) {
-    sqlixx::connection_handle empty_db;
-
-    auto result = sqlixx::prepare_statement(empty_db, "SELECT 1;");
-
-    ASSERT_FALSE(result.has_value());
-    EXPECT_EQ(result.error(), sqlixx::errc::invalid_handle);
 }
