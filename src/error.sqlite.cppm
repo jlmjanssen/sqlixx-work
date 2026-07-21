@@ -5,7 +5,7 @@ module;
 
 #include <sqlite3.h>
 
-export module sqlixx:sqlite_error;
+export module sqlixx:error.sqlite;
 
 import std;
 

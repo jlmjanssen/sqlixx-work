@@ -30,10 +30,12 @@ target_sources(
             FILES
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/module.cppm"
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/error.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlite_error.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/error.sqlite.cppm"
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/handles.cppm"
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/connection.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/connection.open.cppm"
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/statement.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/statement.prepare.cppm"
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/binders.cppm"
 )
 

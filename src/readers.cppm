@@ -8,7 +8,7 @@ module;
 export module sqlixx:readers;
 
 import std;
-import :sqlite_error;
+import :error.sqlite;
 import :error;
 import :handles;
 import :statement;

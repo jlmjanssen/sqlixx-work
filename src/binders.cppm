@@ -8,7 +8,7 @@ module;
 export module sqlixx:binders;
 
 import std;
-import :sqlite_error;
+import :error.sqlite;
 import :statement;
 
 namespace sqlixx {

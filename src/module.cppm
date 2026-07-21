@@ -4,8 +4,10 @@
 export module sqlixx;
 
 export import :error;
-export import :sqlite_error;
+export import :error.sqlite;
 export import :handles;
 export import :connection;
+export import :connection.open;
 export import :statement;
+export import :statement.prepare;
 export import :binders;
