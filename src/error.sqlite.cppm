@@ -11,6 +11,7 @@ import std;
 
 namespace sqlixx {
 
+// NOLINTNEXTLINE(performance-*)
 export enum class sqlite_errc : int {
     // Unused: SQLITE_OK
     error = SQLITE_ERROR,

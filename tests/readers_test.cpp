@@ -59,7 +59,7 @@ TEST_F(SQLiteReadersTest, ReadFloatingPointTypes) {
     EXPECT_FLOAT_EQ(*res_float, 2.5f);
 }
 
-TEST_F(SQLiteReadersTest, ReadStringAndStringView) {
+TEST_F(SQLiteReadersTest, ReadStringView) {
     EXPECT_CALL(mock_, sqlite3_data_count(DUMMY_STMT)).WillRepeatedly(Return(3));
     const char* text_data = "hello";
 
@@ -70,14 +70,6 @@ TEST_F(SQLiteReadersTest, ReadStringAndStringView) {
     auto res_view = sqlixx::read_column_at<std::string_view>(stmt_, 0);
     ASSERT_TRUE(res_view.has_value());
     EXPECT_EQ(*res_view, "hello");
-
-    // std::string
-    EXPECT_CALL(mock_, sqlite3_column_text(DUMMY_STMT, 1))
-        .WillOnce(Return(reinterpret_cast<const unsigned char*>(text_data)));
-    EXPECT_CALL(mock_, sqlite3_column_bytes(DUMMY_STMT, 1)).WillOnce(Return(5));
-    auto res_str = sqlixx::read_column_at<std::string>(stmt_, 1);
-    ASSERT_TRUE(res_str.has_value());
-    EXPECT_EQ(*res_str, "hello");
 
     // Null text handling (should yield empty string_view)
     EXPECT_CALL(mock_, sqlite3_column_text(DUMMY_STMT, 2)).WillOnce(Return(nullptr));
@@ -97,14 +89,6 @@ TEST_F(SQLiteReadersTest, ReadBlobAndSpan) {
     ASSERT_TRUE(res_span.has_value());
     EXPECT_EQ(res_span->size(), 4);
     EXPECT_EQ((*res_span)[0], std::byte{0xDE});
-
-    // std::vector<std::byte>
-    EXPECT_CALL(mock_, sqlite3_column_blob(DUMMY_STMT, 1)).WillOnce(Return(binary_data.data()));
-    EXPECT_CALL(mock_, sqlite3_column_bytes(DUMMY_STMT, 1)).WillOnce(Return(4));
-    auto res_vec = sqlixx::read_column_at<std::vector<std::byte>>(stmt_, 1);
-    ASSERT_TRUE(res_vec.has_value());
-    EXPECT_EQ(res_vec->size(), 4);
-    EXPECT_EQ((*res_vec)[1], std::byte{0xAD});
 }
 
 TEST_F(SQLiteReadersTest, ReadSqliteValuePointer) {
@@ -144,7 +128,7 @@ TEST_F(SQLiteReadersTest, ReadMultipleColumnsVariadic) {
 
     int out_int = 0;
     double out_double = 0.0;
-    std::string out_str;
+    std::string_view out_str;
 
     auto res = sqlixx::read_columns(stmt_, out_int, out_double, out_str);
     ASSERT_TRUE(res.has_value());
@@ -187,9 +171,9 @@ TEST_F(SQLiteReadersTest, ReadColumnBoundsAndActiveRowErrors) {
 TEST_F(SQLiteReadersTest, ReadStringNullHandlingAndFoldOrder) {
     EXPECT_CALL(mock_, sqlite3_data_count(DUMMY_STMT)).WillRepeatedly(Return(3));
 
-    // Test case 1: Verify std::string gracefully handles database NULL values
+    // Test case 1: Verify std::string_view gracefully handles database NULL values
     EXPECT_CALL(mock_, sqlite3_column_text(DUMMY_STMT, 0)).WillOnce(Return(nullptr));
-    auto res_null_str = sqlixx::read_column_at<std::string>(stmt_, 0);
+    auto res_null_str = sqlixx::read_column_at<std::string_view>(stmt_, 0);
     ASSERT_TRUE(res_null_str.has_value());
     EXPECT_TRUE(res_null_str->empty());
 

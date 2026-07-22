@@ -8,10 +8,9 @@ Checks: >
   modernize-*,
   performance-*,
   portability-*,
-  readability-*,
-  -modernize-use-trailing-return-type
+  readability-*
+HeaderFilterRegex: ''
 WarningsAsErrors: >
   *,
   -misc-*,
-  -performance-enum-size,
 ...

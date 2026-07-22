@@ -51,14 +51,6 @@ struct column_reader<std::string_view> {
 };
 
 template <>
-struct column_reader<std::string> {
-    auto operator()(::sqlite3_stmt* stmt, int column) const noexcept -> std::string {
-        std::string_view view = column_reader<std::string_view>{}(stmt, column);
-        return std::string{view};
-    }
-};
-
-template <>
 struct column_reader<std::span<const std::byte>> {
     auto operator()(::sqlite3_stmt* stmt, int column) const noexcept -> std::span<const std::byte> {
         const auto* data = static_cast<const std::byte*>(::sqlite3_column_blob(stmt, column));
@@ -67,14 +59,6 @@ struct column_reader<std::span<const std::byte>> {
         }
         const int bytes = ::sqlite3_column_bytes(stmt, column);
         return {data, static_cast<std::size_t>(bytes)};
-    }
-};
-
-template <>
-struct column_reader<std::vector<std::byte>> {
-    auto operator()(::sqlite3_stmt* stmt, int column) const noexcept -> std::vector<std::byte> {
-        std::span<const std::byte> span = column_reader<std::span<const std::byte>>{}(stmt, column);
-        return std::vector<std::byte>{span.begin(), span.end()};
     }
 };
 
@@ -115,10 +99,11 @@ auto read_columns_from(statement_handle stmt, int& column, Args&... args) noexce
         return std::unexpected(errc::invalid_column_index);
     }
 
-    ([stmt,
-      &column,
-      &args]() noexcept { args = column_reader<std::remove_cvref_t<decltype(args)>>{}(stmt.get(), column++); }(),
-     ...);
+    (
+        [stmt, &column, &args]() noexcept -> auto {
+            args = column_reader<std::remove_cvref_t<decltype(args)>>{}(stmt.get(), column++);
+        }(),
+        ...);
 
     return {};
 }
@@ -138,7 +123,8 @@ auto read_columns(statement_handle stmt, Args&... args) noexcept -> std::expecte
 export template <typename Tuple>
 auto read_tuple_from(statement_handle stmt, int& column, Tuple& tuple) noexcept
     -> std::expected<void, std::error_code> {
-    return std::apply([stmt, &column](auto&... args) { return read_columns_from(stmt, column, args...); }, tuple);
+    return std::apply([stmt, &column](auto&... args) -> auto { return read_columns_from(stmt, column, args...); },
+                      tuple);
 }
 
 export template <typename... Ts>

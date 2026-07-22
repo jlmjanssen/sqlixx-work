@@ -7,6 +7,7 @@ import std;
 
 namespace sqlixx {
 
+// NOLINTNEXTLINE(performance-*)
 export enum class errc : int {
     general = 1,
     invalid_handle = 2,

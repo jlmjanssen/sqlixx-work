@@ -93,9 +93,7 @@
       "inherits": "default",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang-21",
-        "CMAKE_CXX_COMPILER": "clang++-21",
-        "CMAKE_CXX_FLAGS": "-stdlib=libc++",
-        "CMAKE_CXX_STDLIB_MODULES_JSON": "/usr/lib/llvm-21/lib/libc++.modules.json"
+        "CMAKE_CXX_COMPILER": "clang++-21"
       }
     }
   ],
