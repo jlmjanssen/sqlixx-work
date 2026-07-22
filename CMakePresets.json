@@ -87,6 +87,16 @@
         "_sqlixx",
         "_sqlite"
       ]
+    },
+    {
+      "name": "clang",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-21",
+        "CMAKE_CXX_COMPILER": "clang++-21",
+        "CMAKE_CXX_FLAGS": "-stdlib=libc++",
+        "CMAKE_CXX_STDLIB_MODULES_JSON": "/usr/lib/llvm-21/lib/libc++.modules.json"
+      }
     }
   ],
   "buildPresets": [
@@ -97,6 +107,11 @@
       "targets": "all",
       "cleanFirst": false,
       "verbose": true
+    },
+    {
+      "name": "debug",
+      "inherits": "default",
+      "configuration": "Debug"
     }
   ],
   "testPresets": [
@@ -119,6 +134,11 @@
       "environment": {
         "LLVM_PROFILE_FILE": "%b-%p.profraw"
       }
+    },
+    {
+      "name": "debug",
+      "inherits": "default",
+      "configuration": "Debug"
     }
   ],
   "packagePresets": [

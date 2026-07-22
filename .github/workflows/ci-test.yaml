@@ -51,13 +51,10 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Configure project for clang-tidy
-        run: cmake --preset=default -DENABLE_CLANG_TIDY:BOOL=ON
-        env:
-          CC: clang
-          CXX: clang++
+        run: cmake --preset=clang -DENABLE_CLANG_TIDY:BOOL=ON
 
       - name: Perform static analysis
-        run: cmake --build --preset default --config Debug
+        run: cmake --build --preset debug
 
 
   coverage:
@@ -72,19 +69,16 @@ jobs:
           sudo apt-get install -y llvm
 
       - name: Configure project for coverage
-        run: cmake --preset=default -DENABLE_COVERAGE:BOOL=ON
-        env:
-          CC: clang
-          CXX: clang++
+        run: cmake --preset=clang -DENABLE_COVERAGE:BOOL=ON
 
       - name: Build project with coverage instrumentation
-        run: cmake --build --preset default --config Debug
+        run: cmake --build --preset debug
 
       - name: Run tests
-        run: ctest --preset default -C Debug
+        run: ctest --preset debug
 
       - name: Collect coverage data
-        run: cmake --build --preset default --config Debug --target coverage_data
+        run: cmake --build --preset debug --target coverage_data
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
