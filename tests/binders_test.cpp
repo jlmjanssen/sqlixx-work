@@ -23,17 +23,17 @@ protected:
 };
 
 TEST_F(SQLiteBindersTest, BindIntegerTypes) {
-    // Test small types (int format now routed to int64)
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 1, 42)).WillOnce(Return(SQLITE_OK));
+    // Standard '42' is a signed int, routing to sqlite3_bind_int
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 1, 42)).WillOnce(Return(SQLITE_OK));
     auto res_int = sqlixx::bind_parameter_at(stmt_, 1, 42);
     EXPECT_TRUE(res_int.has_value());
 
-    // Test boolean types (treated as integrals, now routed to int64)
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 2, 1)).WillOnce(Return(SQLITE_OK));
+    // bool is smaller than int, routing to sqlite3_bind_int
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 2, 1)).WillOnce(Return(SQLITE_OK));
     auto res_bool = sqlixx::bind_parameter_at(stmt_, 2, true);
     EXPECT_TRUE(res_bool.has_value());
 
-    // Test large types (int64 format)
+    // Large signed types fit into the int64_t branch
     std::int64_t large_val = 9000000000000LL;
     EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 3, large_val)).WillOnce(Return(SQLITE_OK));
     auto res_int64 = sqlixx::bind_parameter_at(stmt_, 3, large_val);
@@ -104,7 +104,9 @@ TEST_F(SQLiteBindersTest, BindSpecialTypes) {
 TEST_F(SQLiteBindersTest, BindNamedParameter) {
     const char* param_name = ":user_id";
     EXPECT_CALL(mock_, sqlite3_bind_parameter_index(DUMMY_STMT, testing::StrEq(param_name))).WillOnce(Return(5));
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 5, 1337)).WillOnce(Return(SQLITE_OK));
+
+    // '1337' is a signed int, expecting sqlite3_bind_int
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 5, 1337)).WillOnce(Return(SQLITE_OK));
 
     auto res = sqlixx::bind_named_parameter(stmt_, param_name, 1337);
     EXPECT_TRUE(res.has_value());
@@ -112,8 +114,9 @@ TEST_F(SQLiteBindersTest, BindNamedParameter) {
 
 TEST_F(SQLiteBindersTest, BindParameterIncrementsIndex) {
     int index = 1;
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 1, 10)).WillOnce(Return(SQLITE_OK));
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 2, 20)).WillOnce(Return(SQLITE_OK));
+    // Both arguments are signed ints, expecting sqlite3_bind_int
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 1, 10)).WillOnce(Return(SQLITE_OK));
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 2, 20)).WillOnce(Return(SQLITE_OK));
 
     EXPECT_TRUE(sqlixx::bind_parameter(stmt_, index, 10).has_value());
     EXPECT_EQ(index, 2);
@@ -123,7 +126,8 @@ TEST_F(SQLiteBindersTest, BindParameterIncrementsIndex) {
 }
 
 TEST_F(SQLiteBindersTest, BindMultipleParameters) {
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 1, 100)).WillOnce(Return(SQLITE_OK));
+    // '100' is a signed int, expecting sqlite3_bind_int
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 1, 100)).WillOnce(Return(SQLITE_OK));
     EXPECT_CALL(mock_, sqlite3_bind_double(DUMMY_STMT, 2, 5.5)).WillOnce(Return(SQLITE_OK));
     EXPECT_CALL(mock_, sqlite3_bind_null(DUMMY_STMT, 3)).WillOnce(Return(SQLITE_OK));
 
@@ -134,7 +138,8 @@ TEST_F(SQLiteBindersTest, BindMultipleParameters) {
 TEST_F(SQLiteBindersTest, BindTupleUnpacking) {
     auto data_tuple = std::make_tuple(42, 3.14, "text");
 
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 1, 42)).WillOnce(Return(SQLITE_OK));
+    // '42' inside the tuple is a signed int, expecting sqlite3_bind_int
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 1, 42)).WillOnce(Return(SQLITE_OK));
     EXPECT_CALL(mock_, sqlite3_bind_double(DUMMY_STMT, 2, 3.14)).WillOnce(Return(SQLITE_OK));
 
     // Match exact array size (4) and the TRANSIENT destructor pointer (-1)
@@ -147,19 +152,21 @@ TEST_F(SQLiteBindersTest, BindTupleUnpacking) {
 }
 
 TEST_F(SQLiteBindersTest, BindParameterFailurePropagatesError) {
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 1, 99)).WillOnce(Return(SQLITE_TOOBIG));
+    // '99' is a signed int, expecting sqlite3_bind_int
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 1, 99)).WillOnce(Return(SQLITE_TOOBIG));
 
     auto res = sqlixx::bind_parameter_at(stmt_, 1, 99);
     ASSERT_FALSE(res.has_value());
-    EXPECT_EQ(res.error(), sqlixx::sqlite_errc::toobig); // Assuming make_sqlite_error_code maps this correctly
+    EXPECT_EQ(res.error(), sqlixx::sqlite_errc::toobig);
 }
 
 TEST_F(SQLiteBindersTest, BindParametersShortCircuitOnFailure) {
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 1, 10)).WillOnce(Return(SQLITE_OK));
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 2, 20)).WillOnce(Return(SQLITE_MISMATCH));
+    // Both inputs are signed ints, expecting sqlite3_bind_int
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 1, 10)).WillOnce(Return(SQLITE_OK));
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 2, 20)).WillOnce(Return(SQLITE_MISMATCH));
 
     // The third binding must never be called due to short-circuiting in the fold expression
-    EXPECT_CALL(mock_, sqlite3_bind_int64(DUMMY_STMT, 3, 30)).Times(0);
+    EXPECT_CALL(mock_, sqlite3_bind_int(DUMMY_STMT, 3, 30)).Times(0);
 
     auto res = sqlixx::bind_parameters(stmt_, 10, 20, 30);
     ASSERT_FALSE(res.has_value());

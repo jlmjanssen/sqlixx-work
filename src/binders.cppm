@@ -30,8 +30,10 @@ struct parameter_binder;
 template <std::integral T>
 struct parameter_binder<T> {
     auto operator()(::sqlite3_stmt* stmt, int index, T value) const noexcept -> int {
-        if constexpr (sizeof(T) <= sizeof(std::int64_t)) {
-            // Beware: uint64_t values with the high bit set will overflow.
+        if constexpr (sizeof(T) < sizeof(int) || (sizeof(T) == sizeof(int) && std::is_signed_v<T>)) {
+            return ::sqlite3_bind_int(stmt, index, static_cast<int>(value));
+        } else if constexpr (sizeof(T) < sizeof(std::int64_t) ||
+                             (sizeof(T) == sizeof(std::int64_t) && std::is_signed_v<T>)) {
             return ::sqlite3_bind_int64(stmt, index, static_cast<std::int64_t>(value));
         } else {
             static_assert(sizeof(T) == 0, "Unsupported integral size");

@@ -19,12 +19,13 @@ struct column_reader;
 template <std::integral T>
 struct column_reader<T> {
     auto operator()(::sqlite3_stmt* stmt, int column) const noexcept -> T {
-        if constexpr (std::is_same_v<T, bool>) {
-            return ::sqlite3_column_int(stmt, column) != 0;
-        } else if constexpr (sizeof(T) <= sizeof(int)) {
+        if constexpr (sizeof(T) < sizeof(int) || (sizeof(T) == sizeof(int) && std::is_signed_v<T>)) {
             return static_cast<T>(::sqlite3_column_int(stmt, column));
-        } else {
+        } else if constexpr (sizeof(T) < sizeof(std::int64_t) ||
+                             (sizeof(T) == sizeof(std::int64_t) && std::is_signed_v<T>)) {
             return static_cast<T>(::sqlite3_column_int64(stmt, column));
+        } else {
+            static_assert(sizeof(T) == 0, "Unsupported integral size");
         }
     }
 };
