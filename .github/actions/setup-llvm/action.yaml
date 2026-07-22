@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 AlgorIT Software Consultancy <https://github.com/algoritnl>
+# SPDX-License-Identifier: CC0-1.0
+
+name: Setup LLVM Toolchain
+description: Installs Clang and LLVM
+inputs:
+  version:
+    description: 'LLVM Version'
+    required: true
+    default: '21'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install packages
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          clang-${{ inputs.version }} \
+          clang-tidy-${{ inputs.version }} \
+          llvm-${{ inputs.version }} \
+          libc++-${{ inputs.version }}-dev \
+          libc++abi-${{ inputs.version }}-dev
+
+    - name: Update symbolic links
+      shell: bash
+      run: |
+        sudo ln -sf clang-${{ inputs.version }} /usr/bin/clang
+        sudo ln -sf clang++-${{ inputs.version }} /usr/bin/clang++
+        sudo ln -sf clang-tidy-${{ inputs.version }} /usr/bin/clang-tidy
+        sudo ln -sf llvm-cov-${{ inputs.version }} /usr/bin/llvm-cov
+        sudo ln -sf llvm-profdata-${{ inputs.version }} /usr/bin/llvm-profdata

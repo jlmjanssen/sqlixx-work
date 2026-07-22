@@ -50,6 +50,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Setup LLVM 21 Toolchain
+        uses: ./.github/actions/setup-llvm
+        with:
+          version: '21'
+
       - name: Configure project for clang-tidy
         run: cmake --preset=clang -DENABLE_CLANG_TIDY:BOOL=ON
 
@@ -63,10 +68,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install LLVM
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y llvm
+      - name: Setup LLVM 21 Toolchain
+        uses: ./.github/actions/setup-llvm
+        with:
+          version: '21'
 
       - name: Configure project for coverage
         run: cmake --preset=clang -DENABLE_COVERAGE:BOOL=ON
