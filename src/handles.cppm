@@ -7,10 +7,10 @@ import std;
 
 namespace sqlixx {
 
-template <typename Handle, template <typename> class... Mixins>
+template <typename Handle, typename... Mixins>
     requires std::is_trivially_default_constructible_v<Handle> &&
-             (std::is_trivially_default_constructible_v<Mixins<std::monostate>> && ...)
-class shallow_handle : public Mixins<shallow_handle<Handle, Mixins...>>... {
+             (std::is_trivially_default_constructible_v<Mixins> && ...)
+class shallow_handle : public Mixins... {
 public:
     constexpr shallow_handle() noexcept = default;
     explicit constexpr shallow_handle(Handle handle) noexcept : handle_(handle) {}
@@ -24,10 +24,10 @@ private:
     Handle handle_{};
 };
 
-template <typename Handle, auto Deleter, template <typename> class... Mixins>
+template <typename Handle, auto Deleter, typename... Mixins>
     requires std::is_trivially_default_constructible_v<Handle> &&
-             (std::is_trivially_default_constructible_v<Mixins<std::monostate>> && ...)
-class owning_handle : public Mixins<owning_handle<Handle, Deleter, Mixins...>>... {
+             (std::is_trivially_default_constructible_v<Mixins> && ...)
+class owning_handle : public Mixins... {
 public:
     using shallow_handle_type = shallow_handle<Handle, Mixins...>;
 
@@ -39,7 +39,7 @@ public:
 
     constexpr owning_handle(owning_handle&& other) noexcept : handle_(other.release()) {}
     constexpr auto operator=(owning_handle&& other) noexcept -> owning_handle& {
-        if (this != &other) {
+        if (this != &other) [[likely]] {
             owning_handle deallocator{release()};
             handle_ = other.release();
         }
