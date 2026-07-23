@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: 2026 AlgorIT Software Consultancy <https://github.com/algoritnl>
 # SPDX-License-Identifier: CC0-1.0
 
-include(TestDependencies)
-include(GoogleTest)
-
 # add_executable(sqlixx_test)
 # set_target_properties(sqlixx_test PROPERTIES CXX_MODULE_STD ON)
 # target_sources(

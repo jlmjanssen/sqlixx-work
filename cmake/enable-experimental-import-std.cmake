@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2026 AlgorIT Software Consultancy <https://github.com/algoritnl>
 # SPDX-License-Identifier: CC0-1.0
 
+include_guard(GLOBAL)
+
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.4.0")
     set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "f35a9ac6-8463-4d38-8eec-5d6008153e7d")
 elseif(CMAKE_VERSION VERSION_GREATER_EQUAL "4.3.0")

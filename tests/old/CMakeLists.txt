@@ -10,7 +10,7 @@ target_sources(
     sqlixx_test
     PRIVATE sqlite_mock.cpp error_test.cpp sqlite_error_test.cpp connection_test.cpp statement_test.cpp binders_test.cpp readers_test.cpp
 )
-target_link_libraries(sqlixx_test PRIVATE SQLixx::SQLixx GTest::gmock_main $<$<CXX_COMPILER_ID:GNU>:-lstdc++exp>)
+target_link_libraries(sqlixx_test PRIVATE sqlixx::sqlixx GTest::gmock_main $<$<CXX_COMPILER_ID:GNU>:-lstdc++exp>)
 target_link_options(
     sqlixx_test
     PRIVATE

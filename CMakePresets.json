@@ -1,154 +1,243 @@
 {
-  "$schema": "https://raw.githubusercontent.com/Kitware/CMake/master/Help/manual/presets/schema.json",
-  "version": 12,
-  "cmakeMinimumRequired": {
-    "major": 4,
-    "minor": 4,
-    "patch": 0
-  },
+  "version": 6,
   "configurePresets": [
     {
-      "name": "_diagnostics",
+      "name": "_root-config",
       "hidden": true,
       "warnings": {
-        "deprecated": true,
-        "experimental": false
+        "dev": false
       },
-      "cacheVariables": {
-        "CMAKE_MESSAGE_LOG_LEVEL": "STATUS",
-        "CMAKE_REQUIRED_QUIET": "OFF"
-      }
-    },
-    {
-      "name": "_standard",
-      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "installDir": "${sourceDir}/stage",
       "cacheVariables": {
         "CMAKE_CXX_STANDARD": "23",
         "CMAKE_CXX_STANDARD_REQUIRED": "ON",
-        "CMAKE_CXX_EXTENSIONS": "ON"
-      }
-    },
-    {
-      "name": "_generator",
-      "hidden": true,
-      "generator": "Ninja Multi-Config",
-      "binaryDir": "${sourceDir}/build",
-      "installDir": "${sourceDir}/stage",
-      "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
-        "CMAKE_DEFAULT_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_EXTENSIONS": "ON",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
     {
-      "name": "_sqlixx",
+      "name": "_sqlite-config",
       "hidden": true,
       "cacheVariables": {
+        "SQLITE_DQS": "0",
+        "SQLITE_ENABLE_API_ARMOR": "ON",
+        "SQLITE_ENABLE_COLUMN_METADATA": "ON",
+        "SQLITE_OMIT_DEPRECATED": "ON"
+      }
+    },
+    {
+      "name": "_debug-base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
         "SQLIXX_BUILD_TESTING": "ON"
       }
     },
     {
-      "name": "_sqlite",
+      "name": "_release-base",
       "hidden": true,
       "cacheVariables": {
-        "SQLITE_BUILD_SHELL": "OFF",
-        "SQLITE_DEFAULT_MEMSTATUS": "1",
-        "SQLITE_DEFAULT_SYNCHRONOUS": "2",
-        "SQLITE_DEFAULT_WAL_SYNCHRONOUS": "1",
-        "SQLITE_DQS": "0",
-        "SQLITE_ENABLE_API_ARMOR": "ON",
-        "SQLITE_ENABLE_CARRAY": "ON",
-        "SQLITE_ENABLE_COLUMN_METADATA": "ON",
-        "SQLITE_ENABLE_DBSTAT_VTAB": "ON",
-        "SQLITE_ENABLE_EXPLAIN_COMMENTS": "ON",
-        "SQLITE_ENABLE_FTS5": "ON",
-        "SQLITE_ENABLE_GEOPOLY": "ON",
-        "SQLITE_ENABLE_ICU": "OFF",
-        "SQLITE_ENABLE_MATH_FUNCTIONS": "ON",
-        "SQLITE_ENABLE_NORMALIZE": "ON",
-        "SQLITE_ENABLE_PERCENTILE": "ON",
-        "SQLITE_ENABLE_PREUPDATE_HOOK": "ON",
-        "SQLITE_ENABLE_RBU": "ON",
-        "SQLITE_ENABLE_RTREE": "ON",
-        "SQLITE_ENABLE_SESSION": "ON",
-        "SQLITE_ENABLE_STMTVTAB": "ON",
-        "SQLITE_LIKE_DOESNT_MATCH_BLOBS": "ON",
-        "SQLITE_MAX_EXPR_DEPTH": "0",
-        "SQLITE_OMIT_DEPRECATED": "ON",
-        "SQLITE_THREADSAFE": "1"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
-      "name": "default",
+      "name": "gcc-debug",
+      "displayName": "GCC Debug Build",
       "inherits": [
-        "_diagnostics",
-        "_standard",
-        "_generator",
-        "_sqlixx",
-        "_sqlite"
-      ]
+        "_root-config",
+        "_sqlite-config",
+        "_debug-base"
+      ],
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
     },
     {
-      "name": "clang",
-      "inherits": "default",
+      "name": "gcc-release",
+      "displayName": "GCC Release Build",
+      "inherits": [
+        "_root-config",
+        "_sqlite-config",
+        "_release-base"
+      ],
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang-21",
-        "CMAKE_CXX_COMPILER": "clang++-21"
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "llvm-debug",
+      "displayName": "Clang Debug Build",
+      "inherits": [
+        "_root-config",
+        "_sqlite-config",
+        "_debug-base"
+      ],
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "llvm-release",
+      "displayName": "Clang Release Build",
+      "inherits": [
+        "_root-config",
+        "_sqlite-config",
+        "_release-base"
+      ],
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "default",
-      "configurePreset": "default",
-      "jobs": 8,
-      "targets": "all",
-      "cleanFirst": false,
-      "verbose": true
+      "name": "_root-build",
+      "hidden": true,
+      "jobs": 0,
+      "targets": "all"
     },
     {
-      "name": "debug",
-      "inherits": "default",
-      "configuration": "Debug"
+      "name": "gcc-debug",
+      "configurePreset": "gcc-debug",
+      "inherits": [
+        "_root-build"
+      ]
+    },
+    {
+      "name": "gcc-release",
+      "configurePreset": "gcc-release",
+      "inherits": [
+        "_root-build"
+      ]
+    },
+    {
+      "name": "llvm-debug",
+      "configurePreset": "llvm-debug",
+      "inherits": [
+        "_root-build"
+      ]
+    },
+    {
+      "name": "llvm-release",
+      "configurePreset": "llvm-release",
+      "inherits": [
+        "_root-build"
+      ]
     }
   ],
   "testPresets": [
     {
-      "name": "default",
-      "configurePreset": "default",
+      "name": "_root-test",
+      "hidden": true,
       "output": {
-        "shortProgress": false,
-        "verbosity": "extra",
-        "debug": false,
-        "outputOnFailure": true,
-        "quiet": false
+        "outputOnFailure": true
       },
       "execution": {
-        "stopOnFailure": false,
-        "jobs": 8,
-        "timeout": 300,
-        "noTestsAction": "ignore"
-      },
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "gcc-debug",
+      "inherits": "_root-test",
+      "configurePreset": "gcc-debug"
+    },
+    {
+      "name": "gcc-release",
+      "inherits": "_root-test",
+      "configurePreset": "gcc-release"
+    },
+    {
+      "name": "llvm-debug",
+      "inherits": "_root-test",
+      "configurePreset": "llvm-debug",
       "environment": {
         "LLVM_PROFILE_FILE": "%b-%p.profraw"
       }
     },
     {
-      "name": "debug",
-      "inherits": "default",
-      "configuration": "Debug"
+      "name": "llvm-release",
+      "inherits": "_root-test",
+      "configurePreset": "llvm-release",
+      "environment": {
+        "LLVM_PROFILE_FILE": "%b-%p.profraw"
+      }
     }
   ],
-  "packagePresets": [
+  "workflowPresets": [
     {
-      "name": "default",
-      "configurePreset": "default",
-      "output": {
-        "debug": false,
-        "verbose": true
-      },
-      "configurations": ["Debug", "Release"],
-      "generators": ["TGZ"]
+      "name": "gcc-debug",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gcc-debug"
+        },
+        {
+          "type": "build",
+          "name": "gcc-debug"
+        },
+        {
+          "type": "test",
+          "name": "gcc-debug"
+        }
+      ]
+    },
+    {
+      "name": "gcc-release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gcc-release"
+        },
+        {
+          "type": "build",
+          "name": "gcc-release"
+        },
+        {
+          "type": "test",
+          "name": "gcc-release"
+        }
+      ]
+    },
+    {
+      "name": "llvm-debug",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "llvm-debug"
+        },
+        {
+          "type": "build",
+          "name": "llvm-debug"
+        },
+        {
+          "type": "test",
+          "name": "llvm-debug"
+        }
+      ]
+    },
+    {
+      "name": "llvm-release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "llvm-release"
+        },
+        {
+          "type": "build",
+          "name": "llvm-release"
+        },
+        {
+          "type": "test",
+          "name": "llvm-release"
+        }
+      ]
     }
   ]
 }

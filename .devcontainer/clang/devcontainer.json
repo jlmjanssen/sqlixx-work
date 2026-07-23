@@ -1,0 +1,13 @@
+{
+  "name": "Beman Project Clang",
+  "image": "ghcr.io/bemanproject/infra-containers-clang:latest",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools"
+      ]
+    }
+  },
+  "remoteUser": "root"
+}

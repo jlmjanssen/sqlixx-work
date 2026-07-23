@@ -1,0 +1,13 @@
+{
+  "name": "Beman Project GCC",
+  "dockerFile": "Dockerfile",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools"
+      ]
+    }
+  },
+  "remoteUser": "root"
+}
