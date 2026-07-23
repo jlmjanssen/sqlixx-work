@@ -1,8 +1,9 @@
 # SPDX-FileCopyrightText: 2026 AlgorIT Software Consultancy <https://github.com/algoritnl>
 # SPDX-License-Identifier: CC0-1.0
 
-cmake_minimum_required(VERSION 4.4)
-set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "f35a9ac6-8463-4d38-8eec-5d6008153e7d")
+cmake_minimum_required(VERSION 3.30)
+
+include(cmake/enable-experimental-import-std.cmake)
 
 project(sqlixx VERSION 1.0.0 LANGUAGES C CXX)
 
@@ -34,16 +35,16 @@ target_sources(
         FILE_SET CXX_MODULES
             BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
             FILES
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/module.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/error.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/error.sqlite.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/handles.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/connection.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/connection.open.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/statement.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/statement.prepare.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/binders.cppm"
-                "${CMAKE_CURRENT_SOURCE_DIR}/src/readers.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/error.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/error.sqlite.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/handles.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/connection.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/connection.open.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/statement.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/statement.prepare.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/binders.cppm"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlixx/readers.cppm"
 )
 
 target_link_libraries(sqlixx PUBLIC SQLite3::SQLite3)
