@@ -39,4 +39,5 @@ target_link_options(
         "LINKER:--wrap=sqlite3_column_value"
 )
 target_enable_coverage(sqlixx_test)
-gtest_add_tests(TARGET sqlixx_test)
+target_enable_sanitizer(sqlixx_test)
+gtest_discover_tests(sqlixx_test DISCOVERY_MODE PRE_TEST)

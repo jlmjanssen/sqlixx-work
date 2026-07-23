@@ -9,42 +9,21 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-26.04
+
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-26.04]
-        library-type: [static, shared]
-        config: [Debug, Release]
-
-        include:
-          - os: ubuntu-26.04
-            cc: gcc
-            cxx: g++
-
-          - library-type: static
-            build-shared-libs: OFF
-          - library-type: shared
-            build-shared-libs: ON
-
-    runs-on: ${{ matrix.os }}
+        preset: [gcc-debug, gcc-release, llvm-debug, llvm-release]
 
     steps:
       - uses: actions/checkout@v7
 
-      - name: Configure project with ${{ matrix.library-type }} libraries
-        run: cmake --preset=default -DBUILD_SHARED_LIBS:BOOL=${{ matrix.build-shared-libs }}
-        env:
-          CC: ${{ matrix.cc }}
-          CXX: ${{ matrix.cxx }}
-
-      - name: Build project in ${{ matrix.config }} mode
-        run: cmake --build --preset default --config ${{ matrix.config }}
-
-      - name: Run tests
-        run: ctest --preset default -C ${{ matrix.config }}
+      - name: Build and test
+        run: cmake --workflow ${{ matrix.preset }}
 
 
-  clang-tidy:
+  lint:
     runs-on: ubuntu-26.04
 
     steps:
@@ -55,11 +34,8 @@ jobs:
         with:
           version: '21'
 
-      - name: Configure project for clang-tidy
-        run: cmake --preset=clang -DENABLE_CLANG_TIDY:BOOL=ON
-
       - name: Perform static analysis
-        run: cmake --build --preset debug
+        run: cmake --workflow llvm-lint
 
 
   coverage:
@@ -73,21 +49,12 @@ jobs:
         with:
           version: '21'
 
-      - name: Configure project for coverage
-        run: cmake --preset=clang -DENABLE_COVERAGE:BOOL=ON
-
-      - name: Build project with coverage instrumentation
-        run: cmake --build --preset debug
-
-      - name: Run tests
-        run: ctest --preset debug
-
-      - name: Collect coverage data
-        run: cmake --build --preset debug --target coverage_data
+      - name: Run coverage and collect
+        run: cmake --workflow llvm-coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
-          files: ./build/coverage.info
+          files: ./build/llvm-coverage/coverage.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true

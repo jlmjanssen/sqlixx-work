@@ -8,7 +8,7 @@ root_dir=$(realpath "$script_dir/..")
 format=${1:-html}
 build_dir=${2:-$PWD}
 
-if [[ "$format" == "html" ]]; then
+if [[ "$format" == "report" ]]; then
 
     coverage_dir=$build_dir/coverage_report
     if [[ -d "${coverage_dir}" ]]; then
@@ -32,7 +32,7 @@ if [[ "$format" == "html" ]]; then
     exit 0
 fi
 
-if [[ "$format" == "xml" ]]; then
+if [[ "$format" == "data" ]]; then
 
     coverage_file=$build_dir/coverage.xml
     if [[ -f "${coverage_file}" ]]; then

@@ -51,8 +51,8 @@
         "_debug-base"
       ],
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain-gcc.cmake",
+        "ENABLE_SANITIZER": "MaxSan"
       }
     },
     {
@@ -64,8 +64,7 @@
         "_release-base"
       ],
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain-gcc.cmake"
       }
     },
     {
@@ -77,8 +76,8 @@
         "_debug-base"
       ],
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain-llvm.cmake",
+        "ENABLE_SANITIZER": "MaxSan"
       }
     },
     {
@@ -90,8 +89,34 @@
         "_release-base"
       ],
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain-llvm.cmake"
+      }
+    },
+    {
+      "name": "llvm-lint",
+      "displayName": "Clang-Tidy Static Analysis",
+      "inherits": [
+        "_root-config",
+        "_sqlite-config",
+        "_debug-base"
+      ],
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain-llvm.cmake",
+        "ENABLE_CLANG_TIDY": "ON",
+        "SQLIXX_BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "llvm-coverage",
+      "displayName": "Clang Coverage Build",
+      "inherits": [
+        "_root-config",
+        "_sqlite-config",
+        "_debug-base"
+      ],
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain-llvm.cmake",
+        "ENABLE_COVERAGE": "ON"
       }
     }
   ],
@@ -129,6 +154,31 @@
       "inherits": [
         "_root-build"
       ]
+    },
+    {
+      "name": "llvm-lint",
+      "configurePreset": "llvm-lint",
+      "inherits": [
+        "_root-build"
+      ]
+    },
+    {
+      "name": "llvm-coverage",
+      "configurePreset": "llvm-coverage",
+      "inherits": [
+        "_root-build"
+      ]
+    },
+    {
+      "name": "llvm-coverage-collect",
+      "configurePreset": "llvm-coverage",
+      "inherits": [
+        "_root-build"
+      ],
+      "targets": [
+        "coverage_data",
+        "coverage_report"
+      ]
     }
   ],
   "testPresets": [
@@ -165,6 +215,14 @@
       "name": "llvm-release",
       "inherits": "_root-test",
       "configurePreset": "llvm-release",
+      "environment": {
+        "LLVM_PROFILE_FILE": "%b-%p.profraw"
+      }
+    },
+    {
+      "name": "llvm-coverage",
+      "inherits": "_root-test",
+      "configurePreset": "llvm-coverage",
       "environment": {
         "LLVM_PROFILE_FILE": "%b-%p.profraw"
       }
@@ -236,6 +294,40 @@
         {
           "type": "test",
           "name": "llvm-release"
+        }
+      ]
+    },
+    {
+      "name": "llvm-lint",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "llvm-lint"
+        },
+        {
+          "type": "build",
+          "name": "llvm-lint"
+        }
+      ]
+    },
+    {
+      "name": "llvm-coverage",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "llvm-coverage"
+        },
+        {
+          "type": "build",
+          "name": "llvm-coverage"
+        },
+        {
+          "type": "test",
+          "name": "llvm-coverage"
+        },
+        {
+          "type": "build",
+          "name": "llvm-coverage-collect"
         }
       ]
     }

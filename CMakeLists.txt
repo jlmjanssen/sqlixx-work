@@ -9,7 +9,7 @@ project(sqlixx VERSION 1.0.0 LANGUAGES C CXX)
 
 include(cmake/enable-clang-tidy.cmake)
 include(cmake/enable-coverage.cmake)
-include(cmake/enable-sanitizers.cmake)
+include(cmake/enable-sanitizer.cmake)
 include(cmake/fetch-project-dependencies.cmake)
 
 # -- Build ---------------------------------------------------------------------
@@ -46,7 +46,7 @@ target_link_libraries(sqlixx.sqlixx PUBLIC SQLite3::SQLite3)
 
 target_enable_clang_tidy(sqlixx.sqlixx)
 target_enable_coverage(sqlixx.sqlixx)
-target_enable_sanitizers(sqlixx.sqlixx)
+target_enable_sanitizer(sqlixx.sqlixx)
 
 # -- Tests ---------------------------------------------------------------------
 
