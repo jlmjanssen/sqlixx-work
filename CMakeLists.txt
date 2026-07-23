@@ -15,12 +15,18 @@ include(EnableClangTidy)
 include(EnableCoverage)
 include(EnableSanitizers)
 
+# Unfortunately, this statement is currently (CMake 4.4) still necessary.
+# Without it, CMake adds extra build steps with -std=gnu++23 and --precompile.
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# -- Build ---------------------------------------------------------------------
+
 add_library(sqlixx STATIC)
 add_library(SQLixx::SQLixx ALIAS sqlixx)
 
 target_compile_features(sqlixx PUBLIC cxx_std_23)
 
-set_target_properties(sqlixx PROPERTIES CXX_MODULE_STD ON)
+set_target_properties(sqlixx PROPERTIES CXX_EXTENSIONS OFF CXX_MODULE_STD ON)
 
 target_sources(
     sqlixx
